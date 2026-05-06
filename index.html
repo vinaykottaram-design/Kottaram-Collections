@@ -626,6 +626,14 @@ select:focus,input:focus{border-color:var(--blue)}
 
 <script>
 // ═══════════════════════════════════════════════════════════
+// GLOBAL ERROR HANDLER — shows errors visibly on screen
+// ═══════════════════════════════════════════════════════════
+window.onerror = function(msg, src, line, col, err) {
+  console.error('App error:', msg, 'line:', line, err);
+  return false;
+};
+
+// ═══════════════════════════════════════════════════════════
 // DB
 // ═══════════════════════════════════════════════════════════
 const DB_NAME = 'kottaram_collections', DB_VER = 1;
@@ -910,8 +918,12 @@ async function setupLoginScreen() {
 }
 
 async function getSalesmenFromConfig() {
-  const items = await dbGetAll('config');
-  return items.filter(i => i.key && i.key.startsWith('sal_')).map(i => i.value);
+  try {
+    const items = await dbGetAll('config');
+    return items.filter(i => i && i.key && typeof i.key === 'string' && i.key.startsWith('sal_') && i.value && i.value.name).map(i => i.value);
+  } catch(e) {
+    return [];
+  }
 }
 async function getDistinctSalesmanNames() {
   const all = await dbGetAll('outstanding');
@@ -2099,38 +2111,52 @@ async function checkAdminPin() {
 }
 
 async function unlockAdmin() {
-  adminUnlocked = true;
-  document.getElementById('admin-lock-card').style.display = 'none';
-  document.getElementById('admin-setup-card').style.display = '';
-  document.getElementById('admin-folder-id').value = CONFIG.driveFolderId || '';
-  document.getElementById('device-id-display').textContent = CONFIG.deviceId || '';
-  await renderAdminSalesmanList();
-
-  // Pre-fill saved values
-  const fidEl = document.getElementById('admin-folder-id');
-  const cidEl = document.getElementById('admin-client-id');
-  if (fidEl) fidEl.value = CONFIG.driveFolderId || '';
-  if (cidEl) cidEl.value = CONFIG.googleClientId || '';
+  try {
+    adminUnlocked = true;
+    document.getElementById('admin-lock-card').style.display = 'none';
+    document.getElementById('admin-setup-card').style.display = '';
+    const fidEl = document.getElementById('admin-folder-id');
+    const cidEl = document.getElementById('admin-client-id');
+    const devEl = document.getElementById('device-id-display');
+    if (fidEl) fidEl.value = CONFIG.driveFolderId || '';
+    if (cidEl) cidEl.value = CONFIG.googleClientId || '';
+    if (devEl) devEl.textContent = CONFIG.deviceId || '';
+    await renderAdminSalesmanList();
+  } catch(e) {
+    console.error('unlockAdmin error:', e);
+    toast('Admin setup error: ' + e.message, 'err');
+  }
 }
 
 async function renderAdminSalesmanList() {
-  const items = await dbGetAll('config');
-  const salesmen = items.filter(i => i.key.startsWith('sal_')).map(i => i.value);
-  const list = document.getElementById('admin-salesman-list');
-  list.innerHTML = '';
-  if (!salesmen.length) { list.innerHTML = '<div style="font-size:13px;color:var(--grey4);text-align:center;padding:12px 0">No salesmen configured yet</div>'; return; }
-  salesmen.forEach(s => {
-    const d = document.createElement('div');
-    d.className = 'check-row';
-    d.innerHTML = `
-      <div class="check-body">
-        <div class="check-label">${s.name}</div>
-        <div class="check-sub"><span class="tag ${s.type==='V'?'tag-van':'tag-retail'}">${s.type==='V'?'Van':'Retail'}</span></div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="editSalesman('${s.name}')">Edit</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteSalesman('${s.name}')">Remove</button>`;
-    list.appendChild(d);
-  });
+  try {
+    const items = await dbGetAll('config');
+    const salesmen = items.filter(i => i && i.key && typeof i.key === 'string' && i.key.startsWith('sal_') && i.value && i.value.name).map(i => i.value);
+    const list = document.getElementById('admin-salesman-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!salesmen.length) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--grey4);text-align:center;padding:12px 0">No salesmen configured yet</div>';
+      return;
+    }
+    salesmen.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'check-row';
+      const sType = s.type || 'R';
+      const sName = s.name || '';
+      d.innerHTML =
+        '<div class="check-body">' +
+        '<div class="check-label">' + sName + '</div>' +
+        '<div class="check-sub"><span class="tag ' + (sType==='V'?'tag-van':'tag-retail') + '">' + (sType==='V'?'Van':'Retail') + '</span></div>' +
+        '</div>' +
+        '<button class="btn btn-secondary btn-sm" onclick="editSalesman('' + sName.replace(/'/g,"\'") + '')">Edit</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteSalesman('' + sName.replace(/'/g,"\'") + '')">Remove</button>';
+      list.appendChild(d);
+    });
+  } catch(e) {
+    console.error('renderAdminSalesmanList error:', e);
+    toast('Error loading salesman list: ' + e.message, 'err');
+  }
 }
 
 let _autoSaveTimer;
@@ -2155,10 +2181,20 @@ function showAddSalesman() { document.getElementById('add-salesman-card').style.
 function hideAddSalesman() { document.getElementById('add-salesman-card').style.display='none'; }
 
 async function editSalesman(name) {
-  document.getElementById('add-salesman-card').style.display = '';
-  document.getElementById('new-sal-name').value = name;
-  document.getElementById('new-sal-name').readOnly = true;
-  document.getElementById('new-sal-pin').value = '';
+  try {
+    document.getElementById('add-salesman-card').style.display = '';
+    const nameEl = document.getElementById('new-sal-name');
+    const pinEl = document.getElementById('new-sal-pin');
+    if (nameEl) { nameEl.value = name; nameEl.readOnly = true; }
+    if (pinEl) pinEl.value = '';
+    const salCfg = CONFIG['sal_' + name];
+    if (salCfg && salCfg.type) {
+      const typeEl = document.getElementById('new-sal-type');
+      if (typeEl) typeEl.value = salCfg.type;
+    }
+  } catch(e) {
+    toast('Edit error: ' + e.message, 'err');
+  }
 }
 
 async function saveSalesman() {
@@ -2171,7 +2207,8 @@ async function saveSalesman() {
   await saveCfg('sal_' + name, { name, pin: hash, type });
   toast('Salesman saved: ' + name, 'ok');
   hideAddSalesman();
-  document.getElementById('new-sal-name').readOnly = false;
+  const nameEl = document.getElementById('new-sal-name');
+  if (nameEl) nameEl.readOnly = false;
   await renderAdminSalesmanList();
   await setupLoginScreen();
 }
