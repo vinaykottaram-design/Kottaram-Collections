@@ -68,7 +68,7 @@ html,body{height:100%;overflow:hidden;background:var(--navy);font-family:var(--f
 .card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
 .card-title{font-size:13px;font-weight:600;color:var(--grey4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
 
-/* ── FORM ELEMENTS ───────────────────────────────────────── */ 
+/* ── FORM ELEMENTS ───────────────────────────────────────── */
 label{font-size:13px;font-weight:500;color:var(--grey5);display:block;margin-bottom:6px}
 select,input[type=text],input[type=number]{
   width:100%;padding:13px 14px;border:1.5px solid var(--grey2);
@@ -124,7 +124,7 @@ select:focus,input:focus{border-color:var(--blue)}
 .pin-key.pin-back{font-size:18px;color:var(--grey4)}
 .pin-key.pin-zero{grid-column:2}
 
-/* ── OUTLET LIST ─────────────────────────────────────────── */ 
+/* ── OUTLET LIST ─────────────────────────────────────────── */
 .outlet-card{
   background:var(--white);border-radius:var(--radius);padding:14px 16px;
   box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;
@@ -811,7 +811,7 @@ function pushScreen(id) {
 }
 function goBack() {
   if (screenStack.length) { showScreen(screenStack.pop()); }
-  else showScreen('scr-home');
+  else showScreen('scr-login');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2067,7 +2067,8 @@ function buildCollectionCSV(cols) {
 let adminPinBuf = '', adminUnlocked = false;
 
 function goAdmin() {
-  screenStack.push(document.querySelector('.screen.active').id);
+  const cur = document.querySelector('.screen.active');
+  if (cur) screenStack.push(cur.id);
   showScreen('scr-admin');
   adminPinBuf = ''; adminUnlocked = false;
   document.getElementById('admin-lock-card').style.display = '';
