@@ -1720,7 +1720,7 @@ function buildReceiptHTML(rec) {
   const timeStr = (rec.printTimestamp || '').slice(11,16) || nowTime();
   const mode = rec.paymentMode || '';
   const rcpt = rec.receiptNumber || '';
-  const COLS = 24; // characters per line — adjust if still wrapping
+  const COLS = 18; // confirmed 18 chars per line on Seznik Veer + Receipt Printer Driver
 
   function ctr(s) {
     s = String(s).slice(0, COLS);
@@ -1736,7 +1736,8 @@ function buildReceiptHTML(rec) {
   }
 
   const lines = [
-    ctr('KOTTARAM ASSOCIATES'),
+    ctr('KOTTARAM'),
+    ctr('ASSOCIATES'),
     ctr('Collection Receipt'),
     '-'.repeat(COLS),
     lft('Date: ' + dateStr + ' ' + timeStr),
@@ -1789,7 +1790,7 @@ function buildDayCloseHTML(collections, summary) {
   const dateStr = todayDisplay();
   const timeStr = nowTime();
   const dcNum = 'DC-' + SESSION.salesmanName + '-' + today();
-  const COLS = 24;
+  const COLS = 18;
 
   function ctr(s) {
     s = String(s).slice(0, COLS);
@@ -1799,14 +1800,15 @@ function buildDayCloseHTML(collections, summary) {
 
   const rowLines = collections.map((col, i) => {
     const num = String(i+1).padStart(3,'0');
-    const name = (col.outletName||'').slice(0,10);
-    const amt = fmt(col.collectedAmount).replace('Rs.','').trim().slice(0,8);
+    const name = (col.outletName||'').slice(0,7);
+    const amt = fmt(col.collectedAmount).replace('Rs.','').trim().slice(0,6);
     const mode = col.paymentMode.slice(0,3);
-    return num + ' ' + name.padEnd(10,' ') + ' ' + amt.padStart(8,' ') + ' ' + mode;
+    return num + ' ' + name.padEnd(7,' ') + ' ' + amt.padStart(6,' ') + ' ' + mode;
   });
 
   const lines = [
-    ctr('KOTTARAM ASSOCIATES'),
+    ctr('KOTTARAM'),
+    ctr('ASSOCIATES'),
     ctr('Day Close Summary'),
     '-'.repeat(COLS),
     ctr(dcNum),
@@ -1845,14 +1847,15 @@ function buildDayCloseHTML(collections, summary) {
 
 
 function buildTestHTML() {
-  const COLS = 24;
+  const COLS = 18;
   function ctr(s) {
     s = String(s).slice(0, COLS);
     const pad = Math.max(0, Math.floor((COLS - s.length) / 2));
     return ' '.repeat(pad) + s;
   }
   const lines = [
-    ctr('KOTTARAM ASSOCIATES'),
+    ctr('KOTTARAM'),
+    ctr('ASSOCIATES'),
     ctr('Test Print'),
     '-'.repeat(COLS),
     'Date: ' + todayDisplay(),
