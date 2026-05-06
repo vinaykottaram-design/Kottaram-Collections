@@ -6,8 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a2744">
 <title>Kottaram Collections</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- System fonts only — no external dependency -->
 <style>
 :root {
   --navy: #1a2744;
@@ -31,8 +30,8 @@
   --radius: 12px;
   --shadow: 0 2px 12px rgba(0,0,0,.10);
   --shadow-lg: 0 8px 32px rgba(0,0,0,.15);
-  --ff: 'DM Sans', sans-serif;
-  --ffm: 'DM Mono', monospace;
+  --ff: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --ffm: 'Courier New', Courier, monospace;
   --header-h: 56px;
   --bottom-h: 0px;
 }
@@ -273,6 +272,7 @@ select:focus,input:focus{border-color:var(--blue)}
   <div id="header">
     <div>
       <div id="header-title">Kottaram Collections</div>
+      <div id="js-status" style="font-size:9px;color:#94a3b8;"></div>
       <div id="header-sub" style="display:none"></div>
     </div>
     <div id="header-right">
@@ -343,7 +343,7 @@ select:focus,input:focus{border-color:var(--blue)}
         </div>
       </div>
       <div style="text-align:center;padding:8px 0">
-        <button class="btn btn-secondary btn-sm" style="width:auto;display:inline-flex" onclick="goAdmin()">⚙ Admin Setup</button>
+        <button class="btn btn-secondary btn-sm" style="width:auto;display:inline-flex;min-height:44px;padding:10px 20px;" onclick="event.preventDefault();event.stopPropagation();goAdmin();">⚙ Admin Setup</button>
       </div>
     </div>
 
@@ -851,6 +851,8 @@ async function saveCfg(key, value) {
 // INIT
 // ═══════════════════════════════════════════════════════════
 async function init() {
+  const jsStatus = document.getElementById('js-status');
+  if (jsStatus) jsStatus.textContent = 'JS OK';
   loading(true, 'Starting up...');
   try {
     await openDB();
@@ -2293,6 +2295,10 @@ if ('serviceWorker' in navigator) {
 // START
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', init);
+// Fallback if DOMContentLoaded already fired
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(init, 100);
+}
 </script>
 </body>
 </html>
